@@ -1,0 +1,7 @@
+click==8.1.7
+dnspython==2.7.0
+joblib==1.4.2
+nltk==3.9.1
+pymongo==4.10.1
+regex==2024.11.6
+tqdm==4.67.1
