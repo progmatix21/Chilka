@@ -14,7 +14,7 @@ from pprint import pprint
 # connection string if this is not applicable.
 # Connect to the MongoDB server and create a 'corpus' database
 # Will get reference to a corpus DB if it already exists
-my_corpus = CorpusClient("corpus", "mongodb://localhost:27017/")
+my_corpus = CorpusClient("corpus", "mongodb://localhost:27017/",db_plugin="mongodb")
 
 # List all the collections present in the db, one collection per file
 print("-" * 79)

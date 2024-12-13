@@ -1,7 +1,7 @@
 # Chilka
 
-Chilka is a corpus server library with a document
-database backend -- currently MongoDB.
+Chilka is a corpus server library with a pluggable document
+database backend.  A MongoDB plugin is provided as an example.
 
 ## Features
 
@@ -28,12 +28,17 @@ as individual database documents using the following schema:
 	{'n' : <sentence-number>, 'sent' : <sentence-text>}
 ```
 
-Each file name gets its own collection of the same name.
+Each file name gets its own collection of the same name (assuming MongoDB).
+
+> **Note:**  It is the responsibility of the plugin to enforce this schema.
+For databases that do not have the concept of a collection, the plugin needs
+to ensure that this abstraction is realized suitably. 
 
 
 ## Example code
 
 Get going with just a few lines of code.
+
 ```python
 from chilka import CorpusClient
 from pprint import pprint
@@ -42,7 +47,7 @@ from pprint import pprint
 # connection string if this is not applicable.
 # Connect to the MongoDB server and create a 'corpus' database
 # Will get reference to a corpus DB if it already exists
-my_corpus = CorpusClient("corpus", "mongodb://localhost:27017/")
+my_corpus = CorpusClient("corpus", "mongodb://localhost:27017/",db_plugin="mongodb")
 
 # List all the collections present in the db, one collection per file
 print("-" * 79)

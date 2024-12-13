@@ -10,10 +10,8 @@
 
 import abc
 from collections.abc import Iterator
-from pymongo.collection import Collection
-from pymongo import MongoClient, ASCENDING
-from nltk.tokenize import sent_tokenize
-from pathlib import Path
+import importlib
+
 
 class NotImplementedError(BaseException):
     # Raised when an unimplemented base class method is called
@@ -36,7 +34,7 @@ class CorpusClientAPI(metaclass=abc.ABCMeta):
         list(): List the files in the corpus
     """
     @abc.abstractmethod
-    def __init__(self,db_name:str,connection_string:str,db_plugin=None):
+    def __init__(self,db_name:str,connection_string:str,db_plugin=None,plugin_args={}):
         """Init method to accept database details.
         
         Args:
@@ -50,7 +48,7 @@ class CorpusClientAPI(metaclass=abc.ABCMeta):
         raise NotImplementedError
     
     @abc.abstractmethod
-    def add(self,filepath:str) -> list:
+    def add(self,filepath:str,plugin_args={}) -> list:
         """Adds a file to the file list
         
         Args:
@@ -63,7 +61,7 @@ class CorpusClientAPI(metaclass=abc.ABCMeta):
         raise NotImplementedError
     
     @abc.abstractmethod
-    def remove(self,filename:str) -> bool:
+    def remove(self,filename:str,plugin_args={}) -> bool:
         """Removes a file from the corpus
         
         Args:
@@ -76,7 +74,7 @@ class CorpusClientAPI(metaclass=abc.ABCMeta):
         raise NotImplementedError
     
     @abc.abstractmethod
-    def readSents(self,filename:str,range_filter:tuple=None,kw_filter:str=None) -> Iterator:
+    def readSents(self,filename:str,range_filter:tuple=None,kw_filter:str=None,plugin_args={}) -> Iterator:
         """Returns a file as an iterator of {n:<>,sent:<>} dictionaries
         
         Args:
@@ -91,7 +89,7 @@ class CorpusClientAPI(metaclass=abc.ABCMeta):
         raise NotImplementedError
     
     @abc.abstractmethod
-    def readBlob(self,filename:str) -> str:
+    def readBlob(self,filename:str,plugin_args={}) -> str:
         """Reads a file as a text blob
         
         Args:
@@ -103,7 +101,7 @@ class CorpusClientAPI(metaclass=abc.ABCMeta):
         raise NotImplementedError
     
     @abc.abstractmethod
-    def list(self) -> list:
+    def list(self,plugin_args={}) -> list:
         """List the files in the corpus
         
         Args:
@@ -126,7 +124,7 @@ class CorpusClient(CorpusClientAPI):
         list(): List the files in the corpus
     """
     
-    def __init__(self,db_name,connection_string,db_plugin=None):
+    def __init__(self,db_name,connection_string,db_plugin=None,plugin_args={}):
         """Init method to accept database details.
         
         Args:
@@ -136,11 +134,17 @@ class CorpusClient(CorpusClientAPI):
         Returns:
             A corpus client object
         """
-        # default "mongodb://localhost:27017/"
-        self.client = MongoClient(connection_string)
-        self.db = self.client[db_name]
-    
-    def add(self,filepath:str) -> list:
+        
+        # Load the plugin
+        plugin_path = "plugins.chilka_" + db_plugin
+        plugin = importlib.import_module(plugin_path)
+        
+        # Instantiate the plugin client
+        self.pu_client = plugin.CorpusClientImpl(db_name, connection_string,
+                                               plugin_args=plugin_args)
+        
+        
+    def add(self,filepath:str,plugin_args={}) -> list:
         """Adds a file to the file list
         
         Args:
@@ -150,31 +154,12 @@ class CorpusClient(CorpusClientAPI):
         
         """
         
-        with open(filepath,'r') as f:
-            s = f.read()
-        
-        collection_name = Path(filepath).name
-        
-        self.db[collection_name].delete_many({}) # Delete old existing collection
+        #-----
+        return self.pu_client.add_impl(filepath, plugin_args=plugin_args)
+        #-----
 
-        self.collection = Collection(self.db, collection_name, create=True)
-        
-        # sentencize the text file
-        sent_list = sent_tokenize(s)
-        
-        doc_dict = [{'n':i, 'sent':s} for i,s in enumerate(sent_list,start=1)]
-        
-        self.filedict_ids = self.collection.insert_many(doc_dict).inserted_ids
-        
-        # Create an index
-        self.collection.create_index(
-            [( "sent", "text" )]
-        )
-        
-        return self.filedict_ids
-        
     
-    def remove(self,filename:str) -> bool:
+    def remove(self,filename:str,plugin_args={}) -> bool:
         """Removes a file from the corpus
         
         Args:
@@ -184,13 +169,12 @@ class CorpusClient(CorpusClientAPI):
             does not exist
         """
         
-        colref = self.db[filename]  # Get reference of filename collection
-        colref.drop()  # A file has a collection to itself
-        
-        return filename not in self.db.list_collection_names()
+        #------
+        return self.pu_client.remove_impl(filename,plugin_args=plugin_args)
+        #------
         
     
-    def readSents(self,filename:str,range_filter=None,kw_filter=None) -> Iterator:
+    def readSents(self,filename:str,range_filter=None,kw_filter=None,plugin_args={}) -> Iterator:
         """Returns a file as an iterator of {n:<>,sent:<>} dictionaries
         
         Args:
@@ -202,21 +186,12 @@ class CorpusClient(CorpusClientAPI):
             with serial number starting from 1
         """
         
-        if all([range_filter == None, kw_filter == None]):
-            return self.db[filename].find({}).sort('n',ASCENDING)
-        
-        self.cmd_dict = {}
-        
-        if range_filter != None:
-            self.cmd_dict['n'] = {'$gte':min(range_filter),'$lte':max(range_filter)}
-            
-        if kw_filter != None:
-            self.cmd_dict['sent'] = {"$regex":kw_filter}
-            
-        return self.db[filename].find(self.cmd_dict).sort('n',ASCENDING)
+        return self.pu_client.readSents_impl(filename,range_filter=range_filter,
+                                             kw_filter=kw_filter,
+                                             plugin_args=plugin_args)
     
 
-    def readBlob(self,filename:str) -> str:
+    def readBlob(self,filename:str,plugin_args={}) -> str:
         """Reads a file as a text blob
         
         Args:
@@ -225,16 +200,10 @@ class CorpusClient(CorpusClientAPI):
             str: File content as a single string
         """
 
-        sent_list = []
-        sent_dict_list = list(self.db[filename].find({}).sort('n',ASCENDING))
-
-        for mydict in sent_dict_list:
-            sent_list.append(mydict['sent'])
-            
-        return "  ".join(sent_list)
-        
+        return self.pu_client.readBlob_impl(filename, plugin_args=plugin_args)
     
-    def list(self) -> list:
+    
+    def list(self,plugin_args={}) -> list:
         """List the files in the corpus
         
         Args:
@@ -242,5 +211,8 @@ class CorpusClient(CorpusClientAPI):
         returns:
             list(str): A list containing filenames in the corpus
         """
-        return self.db.list_collection_names()
+        #return self.db.list_collection_names()
+        # Use the plugin reference to get list of filenames
+        
+        return self.pu_client.list_impl(plugin_args = plugin_args)
         
