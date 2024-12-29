@@ -1,7 +1,8 @@
 # Chilka
 
 Chilka is a corpus server library with a pluggable document
-database backend.  A MongoDB plugin is provided as an example.
+database backend.  Two plugins: one for MongoDB, and another for a
+serverless ChromaDB are provided as examples.
 
 ## Features
 
@@ -18,11 +19,13 @@ corpus generation task.
 directly if necessary.
 - Database backend lets your corpus scale and also grants
 ease of access.
+- Flexible plugin interface allows passing of custom database
+arguments and/or retrieve data in DB-native format.
 
 ## Schema
 
 Chilka sentencizes a text document and stores the sentences
-as individual database documents using the following schema:
+as individual database documents using the following default schema:
 
 ```
 	{'n' : <sentence-number>, 'sent' : <sentence-text>}
@@ -30,9 +33,9 @@ as individual database documents using the following schema:
 
 Each file name gets its own collection of the same name (assuming MongoDB).
 
-> **Note:**  It is the responsibility of the plugin to enforce this schema.
-For databases that do not have the concept of a collection, the plugin needs
-to ensure that this abstraction is realized suitably. 
+> **Note:**  It is the responsibility of the plugin to choose or enforce a 
+particular schema.  For databases that do not have the concept of a collection, 
+the plugin needs to ensure that this abstraction is realized suitably. 
 
 
 ## Example code
@@ -86,5 +89,4 @@ print(f"List of collections in DB: {my_corpus.list()}")
 ```
 
 ## Installation
-Use the provided `requirements.txt` with pip to create the installation environment.  Then, copy or clone
-this repository to start using Chilka.
+Use the provided `requirements.txt` with pip to create/verify the installation environment.  Then, copy or clone this repository to start using Chilka.
