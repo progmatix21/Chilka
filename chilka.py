@@ -1,5 +1,23 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
+
+"""
+Chilka is a corpus serving library with a basic sensible
+interface and a pluggable backend to accomodate different
+databases.
+
+Chilka implements the following interface:
+    
+    - `add()`: Add a file to the corpus.
+    - `remove()`: Remove a file from the corpus.
+    - `list()`: List files from the corpus.
+    - `readSents()`: Read sentences of a particular file based on conditions.
+    - `readBlob()`: Get entire file as a text blob.
+    
+The plugin implementation lets you implement and enforce your own schema.
+The `plugin_args` argument lets you pass custom arguments to your plugin.
+"""
+
 """
 # <Chilka:chilka.py - Corpus creation library>
 # Copyright (C) <2024>  <Atrij Talgery: github.com/progmatix21>
@@ -38,9 +56,9 @@ class CorpusClientAPI(metaclass=abc.ABCMeta):
         """Init method to accept database details.
         
         Args:
-            db_name(str): The name of the database/corpus
-            connection_string(str): The address & port of the database server
-            db_plugin(str): The name of the database plugin
+            db_name (str): The name of the database/corpus
+            connection_string (str): The address & port of the database server
+            db_plugin (str): The name of the database plugin
         Returns:
             A corpus client object
         """
@@ -52,7 +70,7 @@ class CorpusClientAPI(metaclass=abc.ABCMeta):
         """Adds a file to the file list
         
         Args:
-            filepath(str): The path of the file to add to the corpus
+            filepath (str): The path of the file to add to the corpus
         Returns:
             list: The list of IDs of objects added
         
@@ -65,7 +83,7 @@ class CorpusClientAPI(metaclass=abc.ABCMeta):
         """Removes a file from the corpus
         
         Args:
-            filename(str): The name of the file to be removed from the corpus
+            filename (str): The name of the file to be removed from the corpus
         Returns:
             bool: True if the collection was removed successfully, false if it
             does not exist
@@ -78,9 +96,9 @@ class CorpusClientAPI(metaclass=abc.ABCMeta):
         """Returns a file as an iterator of {n:<>,sent:<>} dictionaries
         
         Args:
-            filename(str): The name of the file to be read
-            range_filter(tuple): (optional)Range of lines to read
-            kw_filter(str): (optional)Search term to return sentences containing it
+            filename (str): The name of the file to be read
+            range_filter (tuple): (optional)Range of lines to read
+            kw_filter (str): (optional)Search term to return sentences containing it
         returns:
             iterator: An iterator of dictionaries containing sentences from the file
             with serial number starting from 1
@@ -93,7 +111,7 @@ class CorpusClientAPI(metaclass=abc.ABCMeta):
         """Reads a file as a text blob
         
         Args:
-            filename(str): The name of the file to be read
+            filename (str): The name of the file to be read
         returns:
             str: File content as a single string
         """
@@ -107,7 +125,7 @@ class CorpusClientAPI(metaclass=abc.ABCMeta):
         Args:
             None
         returns:
-            list(str): A list containing filenames in the corpus
+            list (str): A list containing filenames in the corpus
         """
 
         raise NotImplementedError
@@ -124,13 +142,13 @@ class CorpusClient(CorpusClientAPI):
         list(): List the files in the corpus
     """
     
-    def __init__(self,db_name,connection_string,db_plugin=None,plugin_args={}):
+    def __init__(self,db_name:str,connection_string:str,db_plugin=None,plugin_args={}):
         """Init method to accept database details.
         
         Args:
-            db_name(str): The name of the database/corpus
-            connection_string(str): The address & port of the database server
-            db_plugin(str): The name of the database plugin
+            db_name (str): The name of the database/corpus
+            connection_string (str): The address & port of the database server
+            db_plugin (str): The name of the database plugin
         Returns:
             A corpus client object
         """
@@ -148,7 +166,7 @@ class CorpusClient(CorpusClientAPI):
         """Adds a file to the file list
         
         Args:
-            filepath(str): The path of the file to add to the corpus
+            filepath (str): The path of the file to add to the corpus
         Returns:
             list: The list of IDs of objects added
         
@@ -163,7 +181,7 @@ class CorpusClient(CorpusClientAPI):
         """Removes a file from the corpus
         
         Args:
-            filename(str): The name of the file to be removed from the corpus
+            filename (str): The name of the file to be removed from the corpus
         Returns:
             bool: True if the collection was removed successfully, false if it
             does not exist
@@ -178,9 +196,9 @@ class CorpusClient(CorpusClientAPI):
         """Returns a file as an iterator of {n:<>,sent:<>} dictionaries
         
         Args:
-            filename(str): The name of the file/collection to be read
-            range_filter(tuple): (optional)Range of lines to read
-            kw_filter(str): (optional)Search term to return sentences containing it
+            filename (str): The name of the file/collection to be read
+            range_filter (tuple): (optional)Range of lines to read
+            kw_filter (str): (optional)Search term to return sentences containing it
         returns:
             iterator: An iterator of dictionaries containing sentences from the file
             with serial number starting from 1
@@ -195,7 +213,7 @@ class CorpusClient(CorpusClientAPI):
         """Reads a file as a text blob
         
         Args:
-            filename(str): The name of the file to be read
+            filename (str): The name of the file to be read
         returns:
             str: File content as a single string
         """
@@ -209,7 +227,7 @@ class CorpusClient(CorpusClientAPI):
         Args:
             None
         returns:
-            list(str): A list containing filenames in the corpus
+            list (str): A list containing filenames in the corpus
         """
         #return self.db.list_collection_names()
         # Use the plugin reference to get list of filenames

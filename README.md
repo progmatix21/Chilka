@@ -1,8 +1,9 @@
 # Chilka
 
-Chilka is a corpus server library with a pluggable document
+Chilka is a corpus builder and server library with a pluggable document
 database backend.  Two plugins: one for MongoDB, and another for a
-serverless ChromaDB are provided as examples.
+serverless ChromaDB are provided as examples.  For more, read the
+[documentation](https://chilka.pages.dev/).
 
 ## Features
 
